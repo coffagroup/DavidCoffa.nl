@@ -274,6 +274,20 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ----------------------------------------------------
+   Dark‑mode toggle
+---------------------------------------------------- */
+const themeBtn     = document.querySelector('.theme-toggle');
+const storedTheme  = localStorage.getItem('theme');     // 'dark' | 'light' | null
+
+if (storedTheme === 'dark') document.documentElement.classList.add('dark');
+
+themeBtn.addEventListener('click', () => {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+});
+
+
+/* ----------------------------------------------------
    7. Confetti op CTA‑buttons
 ---------------------------------------------------- */
 import(

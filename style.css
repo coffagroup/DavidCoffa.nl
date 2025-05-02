@@ -1,24 +1,27 @@
 /* ----------------------------------------------------
-   Root & dark‑mode
+   Root & dark‑mode (custom switch – default = light)
 ---------------------------------------------------- */
 :root {
-    --clr-bg: #ffffff;
-    --clr-bg-alt: #f9fafb;
-    --clr-text: #0f0f0f;
-    --clr-primary: #2563eb;
-    --clr-primary-dark: #1e40af;
-    --radius: 1.25rem;
-    --shadow: 0 4px 8px rgb(0 0 0 / 0.05);
-    --transition: 0.3s ease;
+    --clr-bg:            #ffffff;
+    --clr-bg-alt:        #f9fafb;
+    --clr-text:          #0f0f0f;
+    --clr-primary:       #2563eb;
+    --clr-primary-dark:  #1e40af;
+    --radius:            1.25rem;
+    --shadow:            0 4px 8px rgb(0 0 0 / 0.05);
+    --transition:        0.3s ease;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --clr-bg: #0d1117;
-      --clr-bg-alt: #161b22;
-      --clr-text: #e6edf3;
-      --shadow: 0 4px 8px rgb(0 0 0 / 0.4);
-    }
+  
+  /* ↓ wordt alleen actief wanneer je via JS `document.documentElement.classList.add('dark')` zet */
+  html.dark {
+    --clr-bg:       #0d1117;
+    --clr-bg-alt:   #161b22;
+    --clr-text:     #e6edf3;
+    --shadow:       0 4px 8px rgb(0 0 0 / 0.40);
   }
+  
+  /* (optioneel) icoontje in de knop wijzigen als dark‑mode actief is */
+  html.dark .theme-toggle i::before { content: '\f185'; } /* FontAwesome 'sun' */
   
   /* ----------------------------------------------------
      Base
@@ -36,9 +39,27 @@
     line-height: 1.6;
     overflow-x: hidden;
   }
+  
   .container {
     width: min(90%, 1100px);
     margin-inline: auto;
+  }
+  .theme-toggle {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    border-radius: 50%;
+    background: var(--clr-bg-alt);
+    color: var(--clr-text);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .theme-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgb(0 0 0 / 0.15);
   }
   
   /* ----------------------------------------------------
