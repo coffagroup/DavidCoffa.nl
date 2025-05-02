@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="nl" data-lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="AI‑gedreven cloud‑oplossingen, UX‑design en online groei door David Coffa"
+    />
+
+    <title>David Coffa • UX‑Design, AI & Cloud</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css"
+    />
+
+    <!-- Lottie -->
+    <script
+      type="module"
+      src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"
+    ></script>
+
+    <!-- Anim‑libs -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"
+      defer
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"
+      defer
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.8.2/dist/vanilla-tilt.min.js"
+      defer
+    ></script>
+
+    <!-- Styles & app‑script -->
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+
+    <!-- minimale fade‑out voor de preloader -->
+    <style>
+      .preloader.hide {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- PRELOADER -->
+    <div id="preloader" class="preloader" role="dialog" aria-modal="true">
+      <h1 class="intro-heading">
+        Hoi, ik ben <span class="gradient-text">David&nbsp;Coffa</span> 👋
+      </h1>
+      <div class="progress-wrapper">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Flying emoji backdrop -->
+    <div id="emoji-sky" aria-hidden="true"></div>
+
+    <!-- Navigation -->
+    <nav class="nav" aria-label="Hoofdmenu">
+      <div class="container nav-inner">
+        <a href="#top" class="logo"
+          >David&nbsp;Coffa<span class="blink">_</span></a
+        >
+
+        <ul class="nav-links" role="list">
+          <li>
+            <a href="#services" data-i18n="nav.services"
+              ><i class="fa-solid fa-wand-magic-sparkles"></i> Services</a
+            >
+          </li>
+          <li>
+            <a href="#work" data-i18n="nav.work"
+              ><i class="fa-solid fa-flask"></i> Werk</a
+            >
+          </li>
+          <li>
+            <a href="#about" data-i18n="nav.about"
+              ><i class="fa-solid fa-user-astronaut"></i> Over</a
+            >
+          </li>
+          <li>
+            <a href="#contact" data-i18n="nav.contact"
+              ><i class="fa-solid fa-paper-plane"></i> Contact</a
+            >
+          </li>
+        </ul>
+
+        <!-- nav controls -->
+        <div class="nav-controls">
+          <button class="lang-toggle" aria-label="Switch language">EN</button>
+          <button
+            class="menu-toggle"
+            aria-label="Menu"
+            onclick="toggleMenu(this)"
+          >
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <header id="top" class="hero" role="banner">
+      <div class="container hero-inner">
+        <h1 data-i18n="hero.intro">
+          Hoi, ik ben <span class="gradient-text">David&nbsp;Coffa</span> 👋
+        </h1>
+        <p class="subtitle" data-i18n="hero.subtitle">
+          Web‑ & UX‑developer die <strong>AI‑integraties</strong>,
+          <strong>cloud‑platforms</strong> en
+          <strong>datagedreven marketing</strong> bouwt om jouw merk
+          <span
+            class="pop tooltip"
+            data-i18n-tip="hero.tooltip"
+            data-tip="🚀 Gaan!"
+            >te laten groeien</span
+          >.
+        </p>
+        <a
+          href="#contact"
+          class="btn-primary js-confetti"
+          data-i18n="hero.cta"
+          >Laten we praten</a
+        >
+      </div>
+      <a
+        href="#services"
+        class="scroll-down"
+        aria-label="Scroll verder"
+        ><i class="fa-solid fa-angles-down"></i
+      ></a>
+    </header>
+
+    <!-- SERVICES -->
+    <section id="services" class="section alt services">
+      <div class="container">
+        <h2 class="section-title" data-i18n="services.title">Services</h2>
+
+        <div class="grid services-grid">
+          <!-- UX & Web -->
+          <article class="service-card tilt flip">
+            <div class="card-inner">
+              <div class="card-front">
+                <i class="fa-solid fa-palette service-icon"></i>
+                <h3 data-i18n="services.uxweb">UX & Web</h3>
+              </div>
+              <div class="card-back">
+                <p data-i18n="services.uxweb.desc">
+                  Pixel‑perfect front‑end, schaalbare back‑end en
+                  high‑performance hosting.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <!-- AI Integrations -->
+          <article class="service-card tilt flip">
+            <div class="card-inner">
+              <div class="card-front">
+                <i class="fa-solid fa-robot service-icon"></i>
+                <h3 data-i18n="services.ai">AI‑Integraties</h3>
+              </div>
+              <div class="card-back">
+                <p data-i18n="services.ai.desc">
+                  GPT‑powered chatbots, aanbevelingssystemen &
+                  proces‑automatisering.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <!-- Cloud -->
+          <article class="service-card tilt flip">
+            <div class="card-inner">
+              <div class="card-front">
+                <i class="fa-solid fa-cloud service-icon"></i>
+                <h3 data-i18n="services.cloud">Cloud‑Oplossingen</h3>
+              </div>
+              <div class="card-back">
+                <p data-i18n="services.cloud.desc">
+                  Serverless architectuur, CI/CD‑pipelines en IaC met Terraform.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <!-- SEO -->
+          <article class="service-card tilt flip">
+            <div class="card-inner">
+              <div class="card-front">
+                <i class="fa-solid fa-magnifying-glass-chart service-icon"></i>
+                <h3 data-i18n="services.seo">SEO & SEA</h3>
+              </div>
+              <div class="card-back">
+                <p data-i18n="services.seo.desc">
+                  Technische SEO, contentstrategie en winstgevende
+                  advertentiecampagnes.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <!-- Branding -->
+          <article class="service-card tilt flip">
+            <div class="card-inner">
+              <div class="card-front">
+                <i class="fa-solid fa-star service-icon"></i>
+                <h3 data-i18n="services.branding">Branding</h3>
+              </div>
+              <div class="card-back">
+                <p data-i18n="services.branding.desc">
+                  Brand‑storytelling, design systems en consistente visuele
+                  identiteit.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <!-- Python -->
+          <article class="service-card tilt flip">
+            <div class="card-inner">
+              <div class="card-front">
+                <i class="devicon-python-plain service-icon"></i>
+                <h3 data-i18n="services.python">Python Dev</h3>
+              </div>
+              <div class="card-back">
+                <p data-i18n="services.python.desc">
+                  Data‑pipelines, FastAPI‑services & AI‑prototypes in recordtijd.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <!-- React -->
+          <article class="service-card tilt flip">
+            <div class="card-inner">
+              <div class="card-front">
+                <i class="devicon-react-original service-icon"></i>
+                <h3 data-i18n="services.react">React Apps</h3>
+              </div>
+              <div class="card-back">
+                <p data-i18n="services.react.desc">
+                  PWA’s & mobile‑first front‑ends met Next.js en supersnelle SSR.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <!-- C# -->
+          <article class="service-card tilt flip">
+            <div class="card-inner">
+              <div class="card-front">
+                <i class="devicon-csharp-plain service-icon"></i>
+                <h3 data-i18n="services.csharp">.NET & C#</h3>
+              </div>
+              <div class="card-back">
+                <p data-i18n="services.csharp.desc">
+                  Enterprise‑grade API’s, microservices & Azure DevOps‑pipelines.
+                </p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- WORK -->
+    <section id="work" class="section parallax">
+      <div class="container">
+        <h2 class="section-title" data-i18n="work.title">Selected Work ✨</h2>
+
+        <div class="grid work-grid">
+          <!-- Card 1 -->
+          <article class="card slide-in">
+            <div class="lottie-wrapper">
+              <lottie-player
+                src="https://assets7.lottiefiles.com/packages/lf20_7fCbvNSmFD.json"
+                background="transparent"
+                speed="1"
+                loop
+                autoplay
+              ></lottie-player>
+            </div>
+            <div class="card-content">
+              <h3 data-i18n="work.card1.title">
+                AI‑chatbot voor 24/7 support
+              </h3>
+              <p data-i18n="work.card1.desc">
+                Conversational AI, GPT‑4o fine‑tuning & semantic search.
+              </p>
+            </div>
+          </article>
+
+          <!-- Card 2 -->
+          <article class="card slide-in" data-delay="0.2">
+            <div class="lottie-wrapper">
+              <lottie-player
+                src="https://assets2.lottiefiles.com/packages/lf20_i9mxcD.json"
+                background="transparent"
+                speed="1"
+                loop
+                autoplay
+              ></lottie-player>
+            </div>
+            <div class="card-content">
+              <h3 data-i18n="work.card2.title">Serverless Cloud Platform</h3>
+              <p data-i18n="work.card2.desc">
+                Auto‑scaling microservices op AWS & Terraform IaC.
+              </p>
+            </div>
+          </article>
+
+          <!-- Card 3 -->
+          <article class="card slide-in" data-delay="0.6">
+            <div class="lottie-wrapper">
+              <lottie-player
+                src="https://assets2.lottiefiles.com/packages/lf20_rjwudFCJs0.json"
+                background="transparent"
+                speed="1"
+                loop
+                autoplay
+              ></lottie-player>
+            </div>
+            <div class="card-content">
+              <h3 data-i18n="work.card4.title">
+                Automatisering van bedrijfsprocessen
+              </h3>
+              <p data-i18n="work.card4.desc">
+                Software voor RPA, workflow‑ & integratie‑automatisering.
+              </p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" class="section alt">
+      <div class="container about-inner">
+        <h2 class="section-title" data-i18n="about.title">Over mij</h2>
+        <p data-i18n="about.text">
+          Met een achtergrond in UX‑design én development bouw ik schaalbare
+          producten waarbij <em>gebruikerservaring</em> en <em>performance</em>
+          centraal staan. Ik geloof in <strong>design systems</strong>,
+          <strong>test‑automatisatie</strong> en
+          <strong>open communicatie</strong>.
+        </p>
+        <ul class="pill-list">
+          <li>React / Node / TypeScript</li>
+          <li>Python AI + LangChain</li>
+          <li>AWS CDK & Terraform</li>
+          <li>.NET / C#</li>
+          <li>Design Systems</li>
+          <li>SEO / SEA</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="section contact">
+      <div class="container contact-inner">
+        <h2 class="section-title" data-i18n="contact.title">Contact</h2>
+        <p data-i18n="contact.text">
+          Nieuw project of sparren over AI? Mail me op
+          <a href="mailto:hello@davidcoffa.nl">hello@davidcoffa.nl</a> of plan
+          een call.
+        </p>
+        <a
+          href="mailto:hello@davidcoffa.nl"
+          class="btn-primary js-confetti"
+          data-i18n="contact.cta"
+          >Stuur een e‑mail</a
+        >
+      </div>
+    </section>
+
+    <!-- Floating action buttons -->
+    <div class="floating-buttons" aria-hidden="false">
+      <a
+        href="https://wa.me/31644109856"
+        class="floating-btn whatsapp"
+        target="_blank"
+        rel="noopener"
+        aria-label="WhatsApp"
+        ><i class="fa-brands fa-whatsapp"></i
+      ></a>
+      <a
+        href="mailto:hello@davidcoffa.nl"
+        class="floating-btn mail"
+        aria-label="E-mail"
+        ><i class="fa-solid fa-envelope"></i
+      ></a>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="container footer-inner">
+        <p data-i18n="footer.copy">
+          &copy; <span id="year"></span> David Coffa — Gemaakt met
+          <span aria-label="coffee" role="img">☕️</span>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
