@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Bitcoin Market Sentiment Visualizer</title>
+  <meta
+    name="description"
+    content="Een interactieve Bitcoin sentiment visualizer met live BTC/USDT data, crowd visualisatie, marktfase, mini chart en sentimentanalyse."
+  />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet"
+  />
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: rgba(15, 23, 42, 0.1);
+      --primary: #f7931a;
+      --primary-dark: #d97706;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --red: #dc2626;
+      --yellow: #ca8a04;
+      --dark: #111827;
+      --shadow-sm: 0 12px 35px rgba(15, 23, 42, 0.08);
+      --shadow-md: 0 24px 80px rgba(15, 23, 42, 0.14);
+      --radius-sm: 16px;
+      --radius-md: 24px;
+      --radius-lg: 34px;
+      --transition: 220ms ease;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Outfit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(247, 147, 26, 0.16), transparent 32rem),
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 34rem),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    button,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(calc(100% - 40px), 1180px);
+      margin-inline: auto;
+      padding: 32px 0;
+    }
+
+    .shell {
+      display: grid;
+      gap: 22px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .hero-card,
+    .market-card,
+    .visual-card,
+    .chart-card,
+    .info-card {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(18px);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(26px, 5vw, 46px);
+      min-height: 430px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      right: -140px;
+      top: -170px;
+      border-radius: 999px;
+      background: rgba(247, 147, 26, 0.22);
+      filter: blur(20px);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 34px;
+      margin: 0 0 18px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: rgba(247, 147, 26, 0.12);
+      color: var(--primary-dark);
+      font-weight: 800;
+      font-size: 0.82rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow span {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 0 7px rgba(22, 163, 74, 0.12);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      max-width: 760px;
+      font-size: clamp(2.4rem, 5.5vw, 5.2rem);
+      line-height: 0.98;
+      letter-spacing: -0.065em;
+    }
+
+    .hero-text {
+      max-width: 680px;
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.18rem);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 48px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 999px;
+      font-weight: 800;
+      text-decoration: none;
+      transition:
+        transform var(--transition),
+        background var(--transition),
+        box-shadow var(--transition);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      color: #ffffff;
+      background: var(--dark);
+      box-shadow: 0 16px 35px rgba(15, 23, 42, 0.18);
+    }
+
+    .btn-secondary {
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .hero-meta {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .hero-meta div {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.68);
+    }
+
+    .hero-meta strong,
+    .hero-meta span {
+      display: block;
+    }
+
+    .hero-meta strong {
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .hero-meta span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .market-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 430px;
+    }
+
+    .market-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .market-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .coin-icon {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, #f7931a, #fbbf24);
+      color: #ffffff;
+      font-size: 1.45rem;
+      box-shadow: 0 16px 34px rgba(247, 147, 26, 0.28);
+    }
+
+    .market-title h2 {
+      font-size: 1.4rem;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+    }
+
+    .market-title p {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: rgba(22, 163, 74, 0.1);
+      color: var(--green);
+      font-size: 0.82rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status-pill.loading {
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--blue);
+    }
+
+    .status-pill.error {
+      background: rgba(220, 38, 38, 0.1);
+      color: var(--red);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
+      box-shadow: 0 0 0 6px currentColor;
+      opacity: 0.8;
+      animation: pulse 1.7s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.35);
+      }
+
+      70% {
+        box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+      }
+    }
+
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .price {
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      font-weight: 900;
+      letter-spacing: -0.06em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .change {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(100, 116, 139, 0.1);
+      color: var(--muted);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .change.positive {
+      background: rgba(22, 163, 74, 0.1);
+      color: var(--green);
+    }
+
+    .change.negative {
+      background: rgba(220, 38, 38, 0.1);
+      color: var(--red);
+    }
+
+    .market-subline {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 22px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-soft);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.06rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 22px;
+    }
+
+    .interval-btn {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      min-height: 38px;
+      padding: 0 14px;
+      font-weight: 800;
+      transition:
+        color var(--transition),
+        background var(--transition),
+        border-color var(--transition),
+        transform var(--transition);
+    }
+
+    .interval-btn:hover {
+      transform: translateY(-1px);
+      color: var(--text);
+    }
+
+    .interval-btn.active {
+      color: #ffffff;
+      background: var(--dark);
+      border-color: var(--dark);
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .visual-card {
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-header h2 {
+      font-size: 1.2rem;
+      letter-spacing: -0.035em;
+    }
+
+    .card-header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .sentiment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: rgba(100, 116, 139, 0.1);
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 0.86rem;
+      white-space: nowrap;
+    }
+
+    .sentiment-badge.euphoria {
+      background: rgba(247, 147, 26, 0.12);
+      color: var(--primary-dark);
+    }
+
+    .sentiment-badge.panic {
+      background: rgba(37, 99, 235, 0.12);
+      color: var(--blue);
+    }
+
+    .sentiment-badge.recovery {
+      background: rgba(22, 163, 74, 0.12);
+      color: var(--green);
+    }
+
+    .sentiment-badge.sideways {
+      background: rgba(202, 138, 4, 0.12);
+      color: var(--yellow);
+    }
+
+    .visual-wrap {
+      position: relative;
+      padding: 18px;
+    }
+
+    #crowd-svg {
+      width: 100%;
+      height: 470px;
+      display: block;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.9), transparent 18rem),
+        linear-gradient(180deg, rgba(247, 147, 26, 0.12), rgba(15, 23, 42, 0.04));
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .side-panel {
+      display: grid;
+      gap: 22px;
+    }
+
+    .chart-card {
+      overflow: hidden;
+    }
+
+    .chart-body {
+      padding: 18px;
+    }
+
+    #mini-chart {
+      width: 100%;
+      height: 190px;
+      display: block;
+      border-radius: 22px;
+      background:
+        linear-gradient(180deg, rgba(15, 23, 42, 0.035), transparent),
+        var(--surface-soft);
+      border: 1px solid var(--border);
+    }
+
+    .info-card {
+      padding: 22px;
+    }
+
+    .score-wrap {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .score-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 0.92rem;
+    }
+
+    .score-bar {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(100, 116, 139, 0.14);
+    }
+
+    .score-fill {
+      width: 50%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--green), var(--primary));
+      transition: width 350ms ease;
+    }
+
+    .advice-box {
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+    }
+
+    .advice-box span {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .advice-box p {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .legend {
+      display: grid;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      flex: 0 0 auto;
+    }
+
+    .disclaimer {
+      padding: 18px 22px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.62);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .disclaimer strong {
+      color: var(--text);
+    }
+
+    .error-message {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      background: rgba(220, 38, 38, 0.08);
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .error-message.visible {
+      display: block;
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+
+      .market-card {
+        min-height: auto;
+      }
+
+      #crowd-svg {
+        height: 420px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .page {
+        width: min(calc(100% - 24px), 1180px);
+        padding: 18px 0;
+      }
+
+      .shell,
+      .hero,
+      .dashboard,
+      .side-panel {
+        gap: 14px;
+      }
+
+      .hero-card,
+      .market-card,
+      .visual-card,
+      .chart-card,
+      .info-card {
+        border-radius: 26px;
+      }
+
+      .hero-card {
+        min-height: auto;
+        padding: 26px;
+      }
+
+      h1 {
+        font-size: clamp(2.1rem, 11vw, 3.4rem);
+        line-height: 1.06;
+        letter-spacing: -0.05em;
+      }
+
+      .hero-text {
+        margin-top: 18px;
+        font-size: 1rem;
+      }
+
+      .hero-actions {
+        display: grid;
+        margin-top: 24px;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .hero-meta {
+        grid-template-columns: 1fr;
+        margin-top: 28px;
+      }
+
+      .market-card {
+        padding: 20px;
+      }
+
+      .market-top,
+      .card-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .status-pill,
+      .sentiment-badge {
+        width: fit-content;
+      }
+
+      .price {
+        font-size: clamp(2.2rem, 13vw, 3.4rem);
+      }
+
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .interval-btn {
+        padding: 0 10px;
+      }
+
+      .card-header {
+        padding: 18px;
+      }
+
+      .visual-wrap,
+      .chart-body {
+        padding: 12px;
+      }
+
+      #crowd-svg {
+        height: 360px;
+        border-radius: 20px;
+      }
+
+      #mini-chart {
+        height: 160px;
+        border-radius: 18px;
+      }
+
+      .info-card {
+        padding: 20px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .coin-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+      }
+
+      .market-title h2 {
+        font-size: 1.2rem;
+      }
+
+      .controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      #crowd-svg {
+        height: 320px;
+      }
+
+      .legend-item {
+        font-size: 0.86rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <div class="shell">
+      <section class="hero" aria-label="Bitcoin sentiment dashboard introductie">
+        <article class="hero-card">
+          <div class="hero-content">
+            <p class="eyebrow">
+              <span></span>
+              Live Bitcoin sentiment
+            </p>
+
+            <h1>Bitcoin Market Sentiment Visualizer</h1>
+
+            <p class="hero-text">
+              Een interactieve visualisatie die prijsbeweging, momentum en marktfase vertaalt naar een eenvoudige crowd-analyse. Handig om FOMO, paniek en zijwaartse fases visueel te herkennen.
+            </p>
+
+            <div class="hero-actions">
+              <a href="#visualisatie" class="btn btn-primary">
+                Bekijk visualisatie
+                <i class="fa-solid fa-arrow-down"></i>
+              </a>
+
+              <a href="#analyse" class="btn btn-secondary">
+                Bekijk analyse
+              </a>
+            </div>
+          </div>
+
+          <div class="hero-meta">
+            <div>
+              <strong>BTC/USDT</strong>
+              <span>live candles via Binance</span>
+            </div>
+
+            <div>
+              <strong>Sentiment</strong>
+              <span>euforie, paniek, herstel of zijwaarts</span>
+            </div>
+
+            <div>
+              <strong>Educatief</strong>
+              <span>geen financieel advies</span>
+            </div>
+          </div>
+        </article>
+
+        <aside class="market-card" aria-label="Live marktgegevens">
+          <div>
+            <div class="market-top">
+              <div class="market-title">
+                <div class="coin-icon">
+                  <i class="fa-brands fa-bitcoin"></i>
+                </div>
+
+                <div>
+                  <h2>Bitcoin live market</h2>
+                  <p id="last-updated">Data wordt geladen...</p>
+                </div>
+              </div>
+
+              <div class="status-pill loading" id="status-pill">
+                <span class="pulse-dot"></span>
+                Laden
+              </div>
+            </div>
+
+            <div class="price-row">
+              <div class="price" id="price">$--</div>
+              <div class="change" id="change">--%</div>
+            </div>
+
+            <p class="market-subline" id="market-subline">
+              Wachten op candle data...
+            </p>
+
+            <div class="error-message" id="error-message"></div>
+
+            <div class="metrics-grid">
+              <div class="metric">
+                <span>Marktfase</span>
+                <strong id="phase">--</strong>
+              </div>
+
+              <div class="metric">
+                <span>RSI indicatie</span>
+                <strong id="rsi">--</strong>
+              </div>
+
+              <div class="metric">
+                <span>Range positie</span>
+                <strong id="range-position">--</strong>
+              </div>
+
+              <div class="metric">
+                <span>Candles</span>
+                <strong id="candle-count">--</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="controls" aria-label="Interval keuze">
+            <button class="interval-btn" type="button" data-interval="15m">15m</button>
+            <button class="interval-btn active" type="button" data-interval="1h">1h</button>
+            <button class="interval-btn" type="button" data-interval="4h">4h</button>
+            <button class="interval-btn" type="button" data-interval="1d">1d</button>
+          </div>
+        </aside>
+      </section>
+
+      <section class="dashboard" id="visualisatie">
+        <article class="visual-card">
+          <div class="card-header">
+            <div>
+              <h2>Market crowd</h2>
+              <p>Hoe sterker de emotie, hoe voller en drukker het plein wordt.</p>
+            </div>
+
+            <div class="sentiment-badge sideways" id="sentiment-badge">
+              Zijwaarts
+            </div>
+          </div>
+
+          <div class="visual-wrap">
+            <svg id="crowd-svg" viewBox="0 0 100 100" role="img" aria-label="Bitcoin market crowd visualisatie"></svg>
+          </div>
+        </article>
+
+        <aside class="side-panel" id="analyse">
+          <article class="chart-card">
+            <div class="card-header">
+              <div>
+                <h2>Prijsverloop</h2>
+                <p>Laatste candles van het gekozen interval.</p>
+              </div>
+            </div>
+
+            <div class="chart-body">
+              <svg id="mini-chart" viewBox="0 0 320 180" role="img" aria-label="Bitcoin mini chart"></svg>
+            </div>
+          </article>
+
+          <article class="info-card">
+            <h2>Sentimentanalyse</h2>
+
+            <div class="score-wrap">
+              <div class="score-top">
+                <span>Sentiment score</span>
+                <span id="sentiment-score-label">50 / 100</span>
+              </div>
+
+              <div class="score-bar" aria-hidden="true">
+                <div class="score-fill" id="score-fill"></div>
+              </div>
+            </div>
+
+            <div class="advice-box">
+              <span>Interpretatie</span>
+              <p id="sentiment-advice">
+                Geen duidelijke richting. Observeer de markt en wacht op bevestiging.
+              </p>
+            </div>
+
+            <div class="legend" aria-label="Legenda">
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#f7931a;"></span>
+                Euforie: veel optimisme en mogelijk FOMO
+              </div>
+
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#2563eb;"></span>
+                Paniek: veel angst en scherpe daling
+              </div>
+
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#16a34a;"></span>
+                Herstel: verbetering na zwakte
+              </div>
+
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#ca8a04;"></span>
+                Zijwaarts: weinig richting of overtuiging
+              </div>
+            </div>
+          </article>
+        </aside>
+      </section>
+
+      <p class="disclaimer">
+        <strong>Disclaimer:</strong> deze visualisatie is uitsluitend educatief bedoeld. De analyse is gebaseerd op simpele technische signalen en is geen financieel advies.
+      </p>
+    </div>
+  </main>
+
+  <script>
+    const API_ROOT = "https://api.binance.com";
+    const CANDLE_LIMIT = 200;
+    const svgNS = "http://www.w3.org/2000/svg";
+
+    const $ = (selector, scope = document) => scope.querySelector(selector);
+    const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
+
+    const elements = {
+      price: $("#price"),
+      change: $("#change"),
+      lastUpdated: $("#last-updated"),
+      statusPill: $("#status-pill"),
+      marketSubline: $("#market-subline"),
+      phase: $("#phase"),
+      rsi: $("#rsi"),
+      rangePosition: $("#range-position"),
+      candleCount: $("#candle-count"),
+      errorMessage: $("#error-message"),
+      sentimentBadge: $("#sentiment-badge"),
+      sentimentScoreLabel: $("#sentiment-score-label"),
+      scoreFill: $("#score-fill"),
+      sentimentAdvice: $("#sentiment-advice"),
+      crowdSvg: $("#crowd-svg"),
+      miniChart: $("#mini-chart")
+    };
+
+    const SENTIMENT = {
+      EUPHORIA: {
+        key: "EUPHORIA",
+        label: "Euforie",
+        className: "euphoria",
+        crowd: 115,
+        color: "#f7931a",
+        bgA: "rgba(247, 147, 26, 0.24)",
+        bgB: "rgba(251, 191, 36, 0.08)",
+        score: 86,
+        phase: "Euforie",
+        advice: "De markt toont veel optimisme. Let op FOMO en overhaaste beslissingen wanneer prijs en emotie te hard oplopen.",
+        messages: [
+          "Iedereen wil instappen",
+          "Nieuwe highs trekken aandacht",
+          "FOMO neemt toe"
+        ]
+      },
+      PANIC: {
+        key: "PANIC",
+        label: "Paniek",
+        className: "panic",
+        crowd: 125,
+        color: "#2563eb",
+        bgA: "rgba(37, 99, 235, 0.24)",
+        bgB: "rgba(15, 23, 42, 0.12)",
+        score: 18,
+        phase: "Paniek",
+        advice: "De markt toont veel angst. Paniek kan voor kansen zorgen, maar alleen wanneer je risico en timing goed begrijpt.",
+        messages: [
+          "Veel angst in de markt",
+          "Verkoopdruk loopt op",
+          "Emotie overheerst"
+        ]
+      },
+      RECOVERY: {
+        key: "RECOVERY",
+        label: "Herstel",
+        className: "recovery",
+        crowd: 76,
+        color: "#16a34a",
+        bgA: "rgba(22, 163, 74, 0.2)",
+        bgB: "rgba(34, 197, 94, 0.07)",
+        score: 66,
+        phase: "Herstel",
+        advice: "De markt toont herstel. Dit kan opbouwend zijn, maar bevestiging blijft belangrijk voordat je conclusies trekt.",
+        messages: [
+          "Voorzichtig herstel",
+          "Kopers komen terug",
+          "Trend wordt sterker"
+        ]
+      },
+      SIDEWAYS: {
+        key: "SIDEWAYS",
+        label: "Zijwaarts",
+        className: "sideways",
+        crowd: 44,
+        color: "#ca8a04",
+        bgA: "rgba(202, 138, 4, 0.18)",
+        bgB: "rgba(244, 211, 94, 0.07)",
+        score: 50,
+        phase: "Zijwaarts",
+        advice: "Er is weinig duidelijke richting. In zulke fases is geduld vaak belangrijker dan actie.",
+        messages: [
+          "Weinig richting",
+          "Markt wacht af",
+          "Volume blijft rustig"
+        ]
+      }
+    };
+
+    let currentInterval = "1h";
+    let refreshTimer = null;
+    let candles = [];
+    let activeSentiment = SENTIMENT.SIDEWAYS;
+
+    function formatUsd(value) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0
+      }).format(value);
+    }
+
+    function formatNumber(value, decimals = 2) {
+      return new Intl.NumberFormat("nl-NL", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      }).format(value);
+    }
+
+    function last(array) {
+      return array[array.length - 1];
+    }
+
+    async function fetchKlines(interval = currentInterval) {
+      const response = await fetch(
+        `${API_ROOT}/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${CANDLE_LIMIT}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Binance API error ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      return data.map((kline) => ({
+        time: Number(kline[0]),
+        open: Number(kline[1]),
+        high: Number(kline[2]),
+        low: Number(kline[3]),
+        close: Number(kline[4]),
+        volume: Number(kline[5])
+      }));
+    }
+
+    function calculateRSI(data, period = 14) {
+      if (data.length <= period) return 50;
+
+      let gains = 0;
+      let losses = 0;
+
+      for (let i = data.length - period; i < data.length; i += 1) {
+        const difference = data[i].close - data[i - 1].close;
+
+        if (difference >= 0) {
+          gains += difference;
+        } else {
+          losses += Math.abs(difference);
+        }
+      }
+
+      if (losses === 0) return 100;
+
+      const rs = gains / losses;
+      return 100 - 100 / (1 + rs);
+    }
+
+    function calculateEMA(values, period) {
+      if (values.length === 0) return 0;
+
+      const multiplier = 2 / (period + 1);
+      let ema = values[0];
+
+      for (let i = 1; i < values.length; i += 1) {
+        ema = values[i] * multiplier + ema * (1 - multiplier);
+      }
+
+      return ema;
+    }
+
+    function detectSentiment(data) {
+      if (data.length < 30) {
+        return SENTIMENT.SIDEWAYS;
+      }
+
+      const closes = data.map((item) => item.close);
+      const latest = last(data);
+      const previous = data[data.length - 2];
+      const reference = data[Math.max(0, data.length - 25)];
+
+      const maxClose = Math.max(...closes);
+      const minClose = Math.min(...closes);
+      const range = maxClose - minClose || 1;
+
+      const pctLast = ((latest.close - previous.close) / previous.close) * 100;
+      const pctReference = ((latest.close - reference.close) / reference.close) * 100;
+      const rangePosition = ((latest.close - minClose) / range) * 100;
+
+      const rsi = calculateRSI(data);
+      const emaFast = calculateEMA(closes.slice(-30), 9);
+      const emaSlow = calculateEMA(closes.slice(-60), 21);
+
+      const nearHigh = rangePosition >= 88;
+      const nearLow = rangePosition <= 16;
+      const strongUp = pctReference >= 5 || pctLast >= 2.5;
+      const strongDown = pctReference <= -5 || pctLast <= -2.5;
+
+      if ((nearHigh && rsi >= 68) || strongUp) {
+        return SENTIMENT.EUPHORIA;
+      }
+
+      if ((nearLow && rsi <= 38) || strongDown) {
+        return SENTIMENT.PANIC;
+      }
+
+      if (emaFast > emaSlow && pctReference > 1 && rsi >= 45) {
+        return SENTIMENT.RECOVERY;
+      }
+
+      if (Math.abs(pctReference) <= 1.2 && rsi > 42 && rsi < 58) {
+        return SENTIMENT.SIDEWAYS;
+      }
+
+      return pctReference >= 0 ? SENTIMENT.RECOVERY : SENTIMENT.SIDEWAYS;
+    }
+
+    function getMarketStats(data) {
+      const latest = last(data);
+      const previous = data[data.length - 2];
+      const reference = data[Math.max(0, data.length - 25)];
+
+      const closes = data.map((item) => item.close);
+      const maxClose = Math.max(...closes);
+      const minClose = Math.min(...closes);
+      const range = maxClose - minClose || 1;
+      const rangePosition = ((latest.close - minClose) / range) * 100;
+
+      const changeLast = ((latest.close - previous.close) / previous.close) * 100;
+      const changeReference = ((latest.close - reference.close) / reference.close) * 100;
+      const rsi = calculateRSI(data);
+
+      return {
+        price: latest.close,
+        changeLast,
+        changeReference,
+        rsi,
+        rangePosition
+      };
+    }
+
+    function setStatus(type, label) {
+      elements.statusPill.className = `status-pill ${type}`;
+      elements.statusPill.innerHTML = `<span class="pulse-dot"></span>${label}`;
+    }
+
+    function showError(message) {
+      elements.errorMessage.textContent = message;
+      elements.errorMessage.classList.add("visible");
+    }
+
+    function clearError() {
+      elements.errorMessage.textContent = "";
+      elements.errorMessage.classList.remove("visible");
+    }
+
+    function createSvgElement(tag, attributes = {}) {
+      const element = document.createElementNS(svgNS, tag);
+
+      Object.entries(attributes).forEach(([key, value]) => {
+        element.setAttribute(key, value);
+      });
+
+      return element;
+    }
+
+    function seededRandom(seed) {
+      let value = seed % 2147483647;
+
+      return function random() {
+        value = (value * 16807) % 2147483647;
+        return (value - 1) / 2147483646;
+      };
+    }
+
+    function renderCrowd(sentiment) {
+      const svg = elements.crowdSvg;
+      svg.innerHTML = "";
+
+      svg.style.background = `
+        radial-gradient(circle at 50% 16%, rgba(255,255,255,0.92), transparent 18rem),
+        linear-gradient(180deg, ${sentiment.bgA}, ${sentiment.bgB}),
+        #ffffff
+      `;
+
+      const defs = createSvgElement("defs");
+      const gradient = createSvgElement("linearGradient", {
+        id: "stage-gradient",
+        x1: "0",
+        y1: "0",
+        x2: "1",
+        y2: "1"
+      });
+
+      gradient.appendChild(createSvgElement("stop", {
+        offset: "0%",
+        "stop-color": "#ffffff",
+        "stop-opacity": "0.75"
+      }));
+
+      gradient.appendChild(createSvgElement("stop", {
+        offset: "100%",
+        "stop-color": sentiment.color,
+        "stop-opacity": "0.1"
+      }));
+
+      defs.appendChild(gradient);
+      svg.appendChild(defs);
+
+      const gridGroup = createSvgElement("g", {
+        opacity: "0.22",
+        stroke: "#0f172a",
+        "stroke-width": "0.12"
+      });
+
+      for (let i = 10; i <= 90; i += 10) {
+        gridGroup.appendChild(createSvgElement("line", {
+          x1: i,
+          y1: 8,
+          x2: i,
+          y2: 92
+        }));
+
+        gridGroup.appendChild(createSvgElement("line", {
+          x1: 8,
+          y1: i,
+          x2: 92,
+          y2: i
+        }));
+      }
+
+      svg.appendChild(gridGroup);
+
+      const stage = createSvgElement("rect", {
+        x: "8",
+        y: "8",
+        width: "84",
+        height: "84",
+        rx: "8",
+        fill: "url(#stage-gradient)",
+        stroke: "rgba(15,23,42,0.18)",
+        "stroke-width": "0.35"
+      });
+
+      svg.appendChild(stage);
+
+      const center = createSvgElement("circle", {
+        cx: "50",
+        cy: "50",
+        r: "12",
+        fill: "rgba(15,23,42,0.06)",
+        stroke: "rgba(15,23,42,0.14)",
+        "stroke-width": "0.25"
+      });
+
+      svg.appendChild(center);
+
+      const btc = createSvgElement("text", {
+        x: "50",
+        y: "54",
+        "text-anchor": "middle",
+        "font-size": "10",
+        "font-weight": "900",
+        fill: "#0f172a"
+      });
+
+      btc.textContent = "BTC";
+      svg.appendChild(btc);
+
+      const random = seededRandom(sentiment.crowd * sentiment.score + sentiment.key.length * 99);
+
+      for (let i = 0; i < sentiment.crowd; i += 1) {
+        const angle = random() * Math.PI * 2;
+        const distance = 17 + random() * 36;
+
+        const x = 50 + Math.cos(angle) * distance + (random() - 0.5) * 6;
+        const y = 52 + Math.sin(angle) * distance * 0.78 + (random() - 0.5) * 5;
+
+        if (x < 10 || x > 90 || y < 12 || y > 90) continue;
+
+        const group = createSvgElement("g", {
+          transform: `translate(${x.toFixed(2)} ${y.toFixed(2)})`
+        });
+
+        const body = createSvgElement("circle", {
+          r: (1.15 + random() * 0.55).toFixed(2),
+          fill: sentiment.color,
+          opacity: (0.55 + random() * 0.38).toFixed(2)
+        });
+
+        const head = createSvgElement("circle", {
+          cx: "0",
+          cy: "-1.7",
+          r: "0.65",
+          fill: "#0f172a",
+          opacity: "0.64"
+        });
+
+        group.appendChild(body);
+        group.appendChild(head);
+        svg.appendChild(group);
+      }
+
+      sentiment.messages.forEach((message, index) => {
+        const y = 18 + index * 10;
+
+        const bubble = createSvgElement("rect", {
+          x: index % 2 === 0 ? "12" : "58",
+          y,
+          width: "30",
+          height: "6.2",
+          rx: "3.1",
+          fill: "rgba(255,255,255,0.88)",
+          stroke: "rgba(15,23,42,0.12)",
+          "stroke-width": "0.2"
+        });
+
+        const text = createSvgElement("text", {
+          x: index % 2 === 0 ? "27" : "73",
+          y: y + 4.1,
+          "text-anchor": "middle",
+          "font-size": "2.35",
+          "font-weight": "800",
+          fill: "#0f172a"
+        });
+
+        text.textContent = message;
+
+        svg.appendChild(bubble);
+        svg.appendChild(text);
+      });
+
+      const trader = createSvgElement("g", {
+        transform: "translate(86 84)"
+      });
+
+      trader.appendChild(createSvgElement("circle", {
+        r: "4.3",
+        fill: "#0f172a",
+        stroke: "#ffffff",
+        "stroke-width": "0.8"
+      }));
+
+      trader.appendChild(createSvgElement("text", {
+        x: "-18",
+        y: "-8",
+        "font-size": "3.2",
+        "font-weight": "900",
+        fill: "#0f172a"
+      }));
+
+      trader.lastChild.textContent = "Observer";
+
+      svg.appendChild(trader);
+    }
+
+    function renderChart(data, sentiment) {
+      const svg = elements.miniChart;
+      svg.innerHTML = "";
+
+      if (!data.length) return;
+
+      const width = 320;
+      const height = 180;
+      const padding = 18;
+
+      const closes = data.map((item) => item.close);
+      const min = Math.min(...closes);
+      const max = Math.max(...closes);
+      const range = max - min || 1;
+
+      const points = closes.map((close, index) => {
+        const x = padding + (index / (closes.length - 1)) * (width - padding * 2);
+        const y = height - padding - ((close - min) / range) * (height - padding * 2);
+
+        return { x, y };
+      });
+
+      const defs = createSvgElement("defs");
+
+      const gradient = createSvgElement("linearGradient", {
+        id: "chart-line-gradient",
+        x1: "0",
+        y1: "0",
+        x2: "1",
+        y2: "0"
+      });
+
+      gradient.appendChild(createSvgElement("stop", {
+        offset: "0%",
+        "stop-color": "#2563eb"
+      }));
+
+      gradient.appendChild(createSvgElement("stop", {
+        offset: "100%",
+        "stop-color": sentiment.color
+      }));
+
+      const areaGradient = createSvgElement("linearGradient", {
+        id: "chart-area-gradient",
+        x1: "0",
+        y1: "0",
+        x2: "0",
+        y2: "1"
+      });
+
+      areaGradient.appendChild(createSvgElement("stop", {
+        offset: "0%",
+        "stop-color": sentiment.color,
+        "stop-opacity": "0.22"
+      }));
+
+      areaGradient.appendChild(createSvgElement("stop", {
+        offset: "100%",
+        "stop-color": sentiment.color,
+        "stop-opacity": "0"
+      }));
+
+      defs.appendChild(gradient);
+      defs.appendChild(areaGradient);
+      svg.appendChild(defs);
+
+      for (let i = 0; i < 4; i += 1) {
+        const y = padding + i * ((height - padding * 2) / 3);
+
+        svg.appendChild(createSvgElement("line", {
+          x1: padding,
+          y1: y,
+          x2: width - padding,
+          y2: y,
+          stroke: "rgba(15,23,42,0.1)",
+          "stroke-width": "1"
+        }));
+      }
+
+      const linePath = points
+        .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+        .join(" ");
+
+      const areaPath = `
+        ${linePath}
+        L ${points[points.length - 1].x.toFixed(2)} ${height - padding}
+        L ${points[0].x.toFixed(2)} ${height - padding}
+        Z
+      `;
+
+      svg.appendChild(createSvgElement("path", {
+        d: areaPath,
+        fill: "url(#chart-area-gradient)"
+      }));
+
+      svg.appendChild(createSvgElement("path", {
+        d: linePath,
+        fill: "none",
+        stroke: "url(#chart-line-gradient)",
+        "stroke-width": "3",
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round"
+      }));
+
+      const latestPoint = points[points.length - 1];
+
+      svg.appendChild(createSvgElement("circle", {
+        cx: latestPoint.x,
+        cy: latestPoint.y,
+        r: "5",
+        fill: sentiment.color,
+        stroke: "#ffffff",
+        "stroke-width": "2"
+      }));
+    }
+
+    function updateUI(data) {
+      candles = data;
+      activeSentiment = detectSentiment(data);
+
+      const stats = getMarketStats(data);
+      const isPositive = stats.changeReference >= 0;
+
+      elements.price.textContent = formatUsd(stats.price);
+
+      elements.change.textContent = `${isPositive ? "+" : ""}${formatNumber(stats.changeReference)}%`;
+      elements.change.className = `change ${isPositive ? "positive" : "negative"}`;
+      elements.change.innerHTML = `
+        <i class="fa-solid ${isPositive ? "fa-arrow-trend-up" : "fa-arrow-trend-down"}"></i>
+        ${isPositive ? "+" : ""}${formatNumber(stats.changeReference)}%
+      `;
+
+      elements.marketSubline.textContent =
+        `Verandering over de referentieperiode binnen interval ${currentInterval}. Laatste candle: ${formatNumber(stats.changeLast)}%.`;
+
+      elements.phase.textContent = activeSentiment.phase;
+      elements.rsi.textContent = formatNumber(stats.rsi, 1);
+      elements.rangePosition.textContent = `${formatNumber(stats.rangePosition, 0)}%`;
+      elements.candleCount.textContent = String(data.length);
+
+      elements.lastUpdated.textContent =
+        `Laatst bijgewerkt: ${new Date().toLocaleTimeString("nl-NL", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        })}`;
+
+      elements.sentimentBadge.className = `sentiment-badge ${activeSentiment.className}`;
+      elements.sentimentBadge.textContent = activeSentiment.label;
+
+      elements.sentimentScoreLabel.textContent = `${activeSentiment.score} / 100`;
+      elements.scoreFill.style.width = `${activeSentiment.score}%`;
+      elements.sentimentAdvice.textContent = activeSentiment.advice;
+
+      renderCrowd(activeSentiment);
+      renderChart(data, activeSentiment);
+    }
+
+    async function loadMarketData() {
+      try {
+        clearError();
+        setStatus("loading", "Laden");
+
+        const data = await fetchKlines(currentInterval);
+
+        updateUI(data);
+        setStatus("", "Live");
+      } catch (error) {
+        console.error(error);
+
+        setStatus("error", "Fout");
+        showError("De live data kon niet worden opgehaald. Controleer je verbinding of probeer het later opnieuw.");
+
+        if (candles.length === 0) {
+          renderCrowd(SENTIMENT.SIDEWAYS);
+          renderChart([], SENTIMENT.SIDEWAYS);
+        }
+      }
+    }
+
+    function setIntervalButtons() {
+      $$(".interval-btn").forEach((button) => {
+        button.classList.toggle("active", button.dataset.interval === currentInterval);
+      });
+    }
+
+    function startPolling() {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+      }
+
+      loadMarketData();
+      refreshTimer = setInterval(loadMarketData, 60000);
+    }
+
+    $$(".interval-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        currentInterval = button.dataset.interval;
+        setIntervalButtons();
+        startPolling();
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderCrowd(SENTIMENT.SIDEWAYS);
+      setIntervalButtons();
+      startPolling();
+    });
+  </script>
+</body>
+</html>
