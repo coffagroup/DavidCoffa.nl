@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <rect width="1200" height="760" rx="40" fill="#f8fafc"/>
+  <rect x="40" y="40" width="1120" height="680" rx="32" fill="#ffffff" stroke="#d8e2ef" stroke-width="4"/>
+  <circle cx="340" cy="295" r="76" fill="#bfdbfe"/>
+  <path d="M150 610 L405 390 L575 535 L710 430 L1050 610 Z" fill="#d1fae5"/>
+  <path d="M150 610 L405 390 L575 535 L710 430 L1050 610 L1050 660 L150 660 Z" fill="#14b8a6" opacity="0.55"/>
+  <text x="600" y="130" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="800" fill="#102033">Afbeelding placeholder</text>
+  <text x="600" y="690" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="25" fill="#667085">Vervang deze afbeelding door je eigen screenshot, wireframe of foto</text>
+</svg>

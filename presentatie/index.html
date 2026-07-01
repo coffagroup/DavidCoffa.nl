@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Karindeling | Webapp presentatie</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="progress" id="progress"></div>
+
+    <header class="topbar">
+      <button class="brand" id="homeButton" type="button" aria-label="Ga naar start">
+        <span class="brand-icon"><i class="fa-solid fa-cart-flatbed"></i></span>
+        <span>
+          <strong>Karindeling</strong>
+          <small>Uniware · afstudeerproject</small>
+        </span>
+      </button>
+
+      <nav class="quick-nav" aria-label="Snelle navigatie">
+        <button type="button" data-go="0">Start</button>
+        <button type="button" data-go="3">Onderzoek</button>
+        <button type="button" data-go="7">Keuze</button>
+        <button type="button" data-go="10">Wireframes</button>
+        <button type="button" data-go="17">Prototype</button>
+        <button type="button" data-go="21">Vragen</button>
+      </nav>
+
+      <div class="actions">
+        <button id="notesButton" type="button"><i class="fa-regular fa-message"></i> Spreeklijn</button>
+        <span id="counter">01 / 22</span>
+        <button id="fullscreenButton" type="button"><i class="fa-solid fa-expand"></i></button>
+      </div>
+    </header>
+
+    <main class="stage">
+      <iframe id="slideFrame" title="Presentatieslide" src="slides/slide-01.html"></iframe>
+    </main>
+
+    <footer class="controls">
+      <button id="previousButton" type="button"><i class="fa-solid fa-arrow-left"></i> Vorige</button>
+      <div class="dots" id="dots"></div>
+      <button id="nextButton" type="button">Volgende <i class="fa-solid fa-arrow-right"></i></button>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

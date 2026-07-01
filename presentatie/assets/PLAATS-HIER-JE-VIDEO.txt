@@ -1,0 +1,8 @@
+Zet je vooropgenomen prototype-video in deze map met de naam:
+
+demo-video.mp4
+
+De slide "Wat toont het prototype" gebruikt automatisch:
+assets/demo-video.mp4
+
+Wil je een andere bestandsnaam gebruiken? Pas dan in slides/slide-13.html de source-regel aan.
