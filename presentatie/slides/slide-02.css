@@ -1,0 +1,2 @@
+/* Slide-specifieke styling. De basis staat in base-slide.css. */
+.number-item:nth-child(2) span { background: var(--blue); } .number-item:nth-child(3) span { background: var(--teal); }

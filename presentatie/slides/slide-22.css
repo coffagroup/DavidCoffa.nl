@@ -1,0 +1,40 @@
+/* Slide-specifieke styling. De basis staat in base-slide.css. */
+.questions-slide {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(15, 190, 168, .18), transparent 24rem),
+    radial-gradient(circle at 82% 22%, rgba(37, 99, 235, .16), transparent 26rem),
+    #ffffff;
+}
+
+.questions-content {
+  display: grid;
+  justify-items: center;
+  max-width: 980px;
+}
+
+.question-icon {
+  display: grid;
+  place-items: center;
+  width: 148px;
+  height: 148px;
+  margin-bottom: 26px;
+  border-radius: 44px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+  box-shadow: 0 24px 70px rgba(37, 99, 235, .26);
+  font-size: 72px;
+  transform: rotate(-3deg);
+}
+
+.questions-slide h1 {
+  margin-bottom: 22px;
+  font-size: clamp(58px, 7vw, 104px);
+}
+
+.questions-slide .lead {
+  margin-bottom: 0;
+}
+
+.questions-slide .meta {
+  justify-content: center;
+}

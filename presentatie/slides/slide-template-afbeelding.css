@@ -1,0 +1,70 @@
+/* Template - standaard slide met afbeelding */
+.image-template-slide {
+  grid-template-columns: 0.82fr 1.18fr;
+  align-items: center;
+}
+
+.template-copy p {
+  max-width: 560px;
+}
+
+.template-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.template-list article {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  color: #334155;
+  font-weight: 850;
+}
+
+.template-list i {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+}
+
+.image-frame {
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  background: #fff;
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.1);
+}
+
+.image-frame img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: #f8fafc;
+}
+
+.image-frame figcaption {
+  margin-top: 12px;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .image-template-slide {
+    grid-template-columns: 1fr;
+  }
+}
