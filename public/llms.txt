@@ -1,0 +1,23 @@
+# David Coffa
+
+> David Coffa bouwt websites, AI-oplossingen en automatiseringen voor mkb-bedrijven. Je spreekt rechtstreeks met de developer.
+
+## Diensten
+
+- Websites voor mkb-bedrijven: https://davidcoffa.nl/diensten
+- Bedrijfsprocessen automatiseren: https://davidcoffa.nl/automatiseringen
+- AI, portalen en maatwerksoftware: https://davidcoffa.nl/diensten
+
+## Projecten
+
+- F&R Vastgoed: project rond een vastgoed lead generator die volledig op AI is gebaseerd. Website: https://fr-vastgoed.nl/
+- BouwWonders: projectinformatie: https://davidcoffa.nl/projecten
+- OrangeGPT: projectinformatie: https://davidcoffa.nl/projecten
+
+## Overige pagina's
+
+- Werkwijze: https://davidcoffa.nl/werkwijze
+- Over David Coffa: https://davidcoffa.nl/over
+- Blog: https://davidcoffa.nl/blog
+- Contact: https://davidcoffa.nl/contact
+- Sitemap: https://davidcoffa.nl/sitemap.xml
