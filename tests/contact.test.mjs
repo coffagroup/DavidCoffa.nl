@@ -15,7 +15,7 @@ after(() => rm(buildDirectory, { recursive: true, force: true }));
 execFileSync(process.execPath, ["node_modules/typescript/bin/tsc", "src/lib/contact-validation.ts", "src/lib/contact-repository.ts", "src/lib/contact-handler.ts", "--outDir", buildDirectory, "--module", "commonjs", "--moduleResolution", "node", "--target", "ES2022", "--skipLibCheck", "--esModuleInterop", "--strict"], { stdio: "pipe" });
 const require = createRequire(import.meta.url);
 const { createContactHandler, createContactRateLimiter } = require(path.join(buildDirectory, "contact-handler.js"));
-const { createFileLeadRepository, createPostgresLeadRepository, getContactRepository, ContactStorageUnavailable, ContactSubmissionConflict } = require(path.join(buildDirectory, "contact-repository.js"));
+const { createFileLeadRepository, createPostgresLeadRepository, createCoffaLeadRepository, getContactRepository, ContactStorageUnavailable, ContactSubmissionConflict } = require(path.join(buildDirectory, "contact-repository.js"));
 
 const origin = "https://davidcoffa.nl";
 function payload(overrides = {}) {
@@ -170,4 +170,53 @@ test("Postgres uses bound values and accepts only identical duplicate submission
   assert.equal(calls[0].values[1], lead.name);
   await repository.save(lead);
   await assert.rejects(() => repository.save({ ...lead, message: "Een gewijzigde vraag met hetzelfde id." }), ContactSubmissionConflict);
+});
+
+const apiLead = () => ({ id: randomUUID(), name: "Test ondernemer", email: "test@example.com", subject: "Automatisering", message: "Een concrete testvraag.", status: "new", createdAt: new Date().toISOString(), source: "website" });
+
+test("Coffa bridge sends the server key and preserves the same idempotency UUID on retries", async () => {
+  const calls = [];
+  const lead = apiLead();
+  const repository = createCoffaLeadRepository("https://api.example.com", "server-only-secret", async (url, options) => {
+    calls.push({ url, options });
+    return Response.json({ ok: true, leadId: lead.id });
+  });
+  await repository.save(lead);
+  await repository.save(lead);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].url, "https://api.example.com/api/public/contact");
+  assert.equal(calls[0].options.headers["X-Coffa-Contact-Key"], "server-only-secret");
+  assert.equal(calls[0].options.redirect, "error");
+  assert.equal(calls[0].options.cache, "no-store");
+  assert.deepEqual(JSON.parse(calls[0].options.body), { id: lead.id, name: lead.name, email: lead.email, subject: lead.subject, message: lead.message, createdAt: lead.createdAt, source: "website" });
+  assert.equal(JSON.parse(calls[1].options.body).id, lead.id);
+  assert.equal(calls[0].options.body.includes("server-only-secret"), false);
+});
+
+test("Coffa bridge rejects unconfirmed responses, provider failures and conflicts", async () => {
+  const lead = apiLead();
+  for (const response of [Response.json({ ok: true, leadId: lead.id }, { status: 202 }), Response.json({ ok: false }, { status: 200 }), Response.json({ ok: true, leadId: randomUUID() }), new Response("not json", { status: 200 }), new Response("private-provider-data", { status: 503 }), new Response(null, { status: 302 })]) {
+    await assert.rejects(() => createCoffaLeadRepository("https://api.example.com", "private-key", async () => response).save(lead), error => error instanceof ContactStorageUnavailable && !error.message.includes("private-key") && !error.message.includes("private-provider-data"));
+  }
+  await assert.rejects(() => createCoffaLeadRepository("https://api.example.com", "private-key", async () => new Response(null, { status: 409 })).save(lead), ContactSubmissionConflict);
+});
+
+test("Coffa bridge bounds network waits and does not expose errors containing secrets", async () => {
+  const lead = apiLead();
+  await assert.rejects(() => createCoffaLeadRepository("https://api.example.com", "private-key", async () => { throw new Error("credentials=private-key private-provider-data"); }).save(lead), error => error instanceof ContactStorageUnavailable && !error.message.includes("private-key"));
+  let aborted = false;
+  const timeoutRepository = createCoffaLeadRepository("https://api.example.com", "private-key", async (_, options) => new Promise((_, reject) => {
+    options.signal.addEventListener("abort", () => { aborted = true; reject(new Error("aborted")); }, { once: true });
+  }), 5);
+  await assert.rejects(() => timeoutRepository.save(lead), ContactStorageUnavailable);
+  assert.equal(aborted, true);
+});
+
+test("configured Coffa bridge never falls back to PostgreSQL or a development file", async () => {
+  let calls = 0;
+  const repository = getContactRepository({ NODE_ENV: "development", COFFA_API_URL: "https://api.example.com", COFFA_CONTACT_KEY: "private-key", DATABASE_URL: "an invalid connection that must never be used" }, async () => { calls++; throw new Error("unavailable"); });
+  await assert.rejects(() => repository.save(apiLead()), ContactStorageUnavailable);
+  assert.equal(calls, 1);
+  for (const config of [{ COFFA_API_URL: "https://api.example.com" }, { COFFA_CONTACT_KEY: "private-key" }]) assert.throws(() => getContactRepository({ NODE_ENV: "development", ...config }), ContactStorageUnavailable);
+  for (const url of ["ftp://api.example.com", "https://user:password@api.example.com", "https://api.example.com/prefix", "https://api.example.com?query=1", "https://api.example.com#fragment", "https:////api.example.com", "https://api.\nexample.com"]) assert.throws(() => createCoffaLeadRepository(url, "private-key"), ContactStorageUnavailable);
 });

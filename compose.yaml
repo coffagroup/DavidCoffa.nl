@@ -1,0 +1,19 @@
+name: coffa-os
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-coffa_os_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-coffa_os}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run node scripts/local-setup.mjs first}
+    ports:
+      - "127.0.0.1:55439:5432"
+    volumes:
+      - coffa-postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+volumes:
+  coffa-postgres:

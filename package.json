@@ -7,7 +7,14 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test:contact": "node --test tests/contact.test.mjs"
+    "test:contact": "node --test tests/contact.test.mjs",
+    "coffa:setup": "node scripts/local-setup.mjs",
+    "api:dev": "node scripts/api-dev.mjs",
+    "api:migrate": "node scripts/api-dev.mjs --migrate",
+    "coffa:bootstrap": "node scripts/bootstrap-admin.mjs",
+    "test:api": "node scripts/coffa-tests.mjs",
+    "test:coffa-e2e": "node scripts/coffa-e2e.mjs",
+    "coffa:ai": "node scripts/configure-openai.mjs"
   },
   "dependencies": {
     "next": "16.4.5",

@@ -1,0 +1,69 @@
+# Optional blueprint for NEW services. Review names before applying.
+# The current production website is deliberately not targeted by this file.
+services:
+  - type: web
+    name: coffa-os-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    preDeployCommand: dotnet Coffa.Api.dll --migrate
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Hosting__HttpsOnlyProxy
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coffa-os-db
+          property: connectionString
+      - key: Public__PortalUrl
+        value: https://davidcoffa.nl/portaal
+      - key: Contact__ApiKey
+        generateValue: true
+      - key: Email__EnableSending
+        value: "false"
+      - key: Email__From
+        value: info@davidcoffa.nl
+      - key: Tickets__EmailNotificationsEnabled
+        value: "false"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OpenAI__PlanningModel
+        value: gpt-5.6-terra
+      - key: OpenAI__TranscriptionModel
+        value: gpt-transcribe
+      - key: Storage__Bucket
+        sync: false
+      - key: Storage__Endpoint
+        sync: false
+      - key: Storage__Region
+        sync: false
+      - key: Storage__AccessKey
+        sync: false
+      - key: Storage__SecretKey
+        sync: false
+  - type: web
+    name: coffa-os-web-preview
+    runtime: node
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start -- --hostname 0.0.0.0 --port $PORT
+    healthCheckPath: /portaal
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: COFFA_API_URL
+        sync: false
+      - key: COFFA_CONTACT_KEY
+        fromService:
+          type: web
+          name: coffa-os-api
+          envVarKey: Contact__ApiKey
+# Set the API's HTTPS URL as COFFA_API_URL. For an existing web service,
+# copy only the two COFFA_* variables after testing the new API.
+databases:
+  - name: coffa-os-db
+    databaseName: coffa_os
+    user: coffa_os
+    postgresMajorVersion: "18"
+    ipAllowList: []

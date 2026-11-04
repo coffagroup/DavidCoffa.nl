@@ -17,6 +17,39 @@ export interface LeadRepository { save(lead: ContactLead): Promise<void> }
 export class ContactStorageUnavailable extends Error {}
 export class ContactSubmissionConflict extends Error {}
 
+export function createCoffaLeadRepository(apiUrl: string, apiKey: string, fetcher: typeof fetch = fetch, timeoutMs = 8000): LeadRepository {
+  let endpoint: string;
+  try {
+    const url = new URL(apiUrl);
+    if (!/^https?:\/\/[^/?#]+\/?$/i.test(apiUrl) || /[\s\\]/.test(apiUrl) || !["http:", "https:"].includes(url.protocol)
+      || url.username || url.password || url.pathname !== "/" || url.search || url.hash || !url.hostname
+      || !apiKey || /[\r\n]/.test(apiKey)) throw new Error();
+    endpoint = new URL("/api/public/contact", url.origin).toString();
+  } catch {
+    throw new ContactStorageUnavailable("Coffa contact API configuration is invalid.");
+  }
+  return { async save(lead) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), Math.min(10000, Math.max(1, timeoutMs)));
+    try {
+      const response = await fetcher(endpoint, {
+        method: "POST", cache: "no-store", redirect: "error", signal: controller.signal,
+        headers: { "Content-Type": "application/json", "X-Coffa-Contact-Key": apiKey },
+        body: JSON.stringify({ id: lead.id, name: lead.name, email: lead.email, subject: lead.subject, message: lead.message, createdAt: lead.createdAt, source: lead.source }),
+      });
+      if (response.status === 409) throw new ContactSubmissionConflict();
+      if (response.status !== 200) throw new ContactStorageUnavailable();
+      const body: unknown = await response.json();
+      if (!body || typeof body !== "object" || !("ok" in body) || body.ok !== true
+        || !("leadId" in body) || typeof body.leadId !== "string" || body.leadId.toLowerCase() !== lead.id.toLowerCase()) throw new ContactStorageUnavailable();
+    } catch (error) {
+      if (error instanceof ContactSubmissionConflict) throw error;
+      // Neither configuration secrets nor provider response bodies leave this boundary.
+      throw new ContactStorageUnavailable("Coffa contact API is unavailable.");
+    } finally { clearTimeout(timeout); }
+  } };
+}
+
 function sameSubmission(left: ContactLead, right: ContactLead) {
   return left.id === right.id && left.name === right.name && left.email === right.email
     && left.subject === right.subject && left.message === right.message && left.source === right.source;
@@ -82,7 +115,13 @@ export function createPostgresLeadRepository(database: Database): LeadRepository
 
 let configuredRepository: { key: string; repository: LeadRepository } | undefined;
 
-export function getContactRepository(env: Record<string, string | undefined> = process.env): LeadRepository {
+export function getContactRepository(env: Record<string, string | undefined> = process.env, fetcher: typeof fetch = fetch): LeadRepository {
+  const apiUrl = env.COFFA_API_URL?.trim();
+  const apiKey = env.COFFA_CONTACT_KEY?.trim();
+  if (apiUrl || apiKey) {
+    if (!apiUrl || !apiKey) throw new ContactStorageUnavailable("Coffa contact API configuration is incomplete.");
+    return createCoffaLeadRepository(apiUrl, apiKey, fetcher);
+  }
   const connectionString = env.DATABASE_URL?.trim();
   if (connectionString) {
     if (configuredRepository?.key === connectionString) return configuredRepository.repository;

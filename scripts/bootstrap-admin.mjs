@@ -1,0 +1,14 @@
+import { createInterface } from 'node:readline/promises';
+import { spawn } from 'node:child_process';
+import { localConfig,apiEnvironment } from './coffa-env.mjs';
+if(!process.stdin.isTTY)throw new Error('Start dit commando interactief in je terminal.');
+const reader=createInterface({input:process.stdin,output:process.stdout});
+const email=(await reader.question('E-mailadres eerste SuperAdmin: ')).trim();
+reader.close();
+if(!email.includes('@'))throw new Error('Vul een geldig e-mailadres in.');
+process.stdout.write('Sterk wachtwoord (minimaal 12 tekens, invoer is verborgen): ');
+const password=await new Promise(resolve=>{let value='';process.stdin.setRawMode(true);process.stdin.resume();function receive(chunk){const text=chunk.toString();if(text==='\u0003'){process.stdin.setRawMode(false);process.exit(130);}if(/[\r\n]/.test(text)){value+=text.split(/[\r\n]/,1)[0];process.stdin.off('data',receive);process.stdin.setRawMode(false);process.stdin.pause();process.stdout.write('\n');resolve(value);return;}if(text==='\u007f'){value=value.slice(0,-1);return;}value+=text;}process.stdin.on('data',receive);});
+if(password.length<12)throw new Error('Gebruik minimaal 12 tekens.');
+const values=await localConfig();
+const child=spawn('dotnet',['run','--project','apps/api/Coffa.Api','--','--bootstrap-only'],{stdio:'inherit',env:{...apiEnvironment(values),Bootstrap__Email:email,Bootstrap__Password:password,Bootstrap__Name:'David Coffa'}});
+child.on('exit',code=>{process.exitCode=code??1;});
