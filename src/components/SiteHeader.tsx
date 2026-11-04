@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const items = [
   { label: "Automatiseringen", href: "/automatiseringen" },
@@ -14,6 +15,7 @@ const items = [
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const { language, setLanguage } = useLanguage();
   const menuButton = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
 
@@ -59,9 +61,15 @@ export default function SiteHeader() {
         <nav id="primary-menu" className={`main-nav ${open ? "is-open" : ""}`} aria-label="Hoofdnavigatie">
           {items.map((item) => <Link key={item.href} href={item.href} className={pathname === item.href || pathname.startsWith(`${item.href}/`) ? "active" : ""}>{item.label}</Link>)}
           <Link href="/contact" className="mobile-contact">Bespreek jouw uitdaging ↗</Link>
+          <Link href="/portaal/inloggen" className="mobile-portal">{language === "en" ? "Client portal log in ↗" : "Inloggen klantenportaal ↗"}</Link>
         </nav>
         <div className="nav-right">
+          <div className="language-toggle" role="group" aria-label="Taalkeuze">
+            <button type="button" onClick={() => setLanguage("nl")} aria-pressed={language === "nl"}>NL</button>
+            <button type="button" onClick={() => setLanguage("en")} aria-pressed={language === "en"}>EN</button>
+          </div>
           <a className="nav-linkedin" href="https://www.linkedin.com/in/davidcoffa" target="_blank" rel="noopener noreferrer" aria-label="David Coffa op LinkedIn" title="LinkedIn">in</a>
+          <Link className="nav-portal" href="/portaal/inloggen">{language === "en" ? "Client login" : "Klantlogin"} <span aria-hidden="true">↗</span></Link>
           <Link className="nav-contact" href="/contact" data-cta="header">Bespreek jouw uitdaging <span aria-hidden="true">↗</span></Link>
           <button ref={menuButton} className="menu-toggle" type="button" onClick={() => setOpen(!open)} aria-label={open ? "Sluit menu" : "Open menu"} aria-controls="primary-menu" aria-expanded={open}>
             <span></span><span></span>

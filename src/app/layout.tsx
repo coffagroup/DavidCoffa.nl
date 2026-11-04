@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
+import SiteChrome from "@/components/SiteChrome";
+import { LanguageProvider } from "@/components/LanguageProvider";
 import "./globals.css";
 import "./conversion.css";
+import "./analytics-consent.css";
 
 const siteUrl = "https://davidcoffa.nl";
 export const metadata: Metadata = {
@@ -41,5 +42,5 @@ const structuredData = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="nl"><body id="top"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} /><a href="#content" className="skip-link">Direct naar inhoud</a><SiteHeader/><main id="content">{children}</main><SiteFooter/></body></html>;
+  return <html lang="nl"><body id="top"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} /><LanguageProvider><SiteChrome>{children}</SiteChrome></LanguageProvider></body></html>;
 }

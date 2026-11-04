@@ -18,7 +18,7 @@ Open `http://localhost:3000`. Bij lokale ontwikkeling werkt het contactformulier
 - `/automatiseringen`: filterbare catalogus en interactieve tijdwinstsimulator.
 - `/blog` en `/blog/[slug]`: artikelen uit `src/lib/blog.ts`.
 - `/contact`: toegankelijk formulier, vervolgstappen en directe contactmogelijkheden.
-- `POST /api/contact`: centrale berichtenopslag, voorbereid op het toekomstige dashboard.
+- `POST /api/contact`: centrale berichtenopslag met een serverkoppeling naar Coffa OS.
 
 De primaire actie is overal **Bespreek jouw uitdaging**. Diensten kunnen het onderwerp vooraf invullen via `/contact?onderwerp=...`.
 
@@ -48,7 +48,7 @@ Voor productie:
 
 Zonder productieconfiguratie geeft de API een foutmelding met een directe mailmogelijkheid; er verschijnt geen onterechte ontvangstbevestiging. De lokale bestandsadapter is alleen bedoeld voor development/test.
 
-Zie [contactconfiguratie](docs/CONTACT-SETUP.md) en de [dashboardroadmap](docs/DASHBOARD-ROADMAP.md). De dashboardinterface, authenticatie en hostingdatabase zijn vervolgstappen. Het huidige project bevat geen e-mailnotificaties of analyticsdienst.
+Zie [contactconfiguratie](docs/CONTACT-SETUP.md) en de [dashboardroadmap](docs/DASHBOARD-ROADMAP.md). Coffa OS bevat inmiddels de dashboardinterface, authenticatie en configureerbare e-mailnotificaties. Zie de Coffa OS-handleiding hieronder. De echte hostingdatabase en verzendcredentials moeten voor productie worden ingesteld. Er is geen analyticsdienst gekoppeld.
 
 ## Inhoud beheren
 
@@ -66,3 +66,9 @@ De tijdwinstberekening is `(oude minuten − nieuwe minuten) × aantal per week 
 - E-mail: info@davidcoffa.nl
 - Telefoon: +31 6 83 43 90 00
 - LinkedIn: https://www.linkedin.com/in/davidcoffa
+
+## Coffa OS — bedrijfsdashboard en klantenportaal
+
+De implementatie staat onder `/portaal`, met een aparte ASP.NET Core 10 API in `apps/api/Coffa.Api`. Klantenbeheer, offertes/facturen, abonnementen, projecten/taken, uren, support en privébestanden gebruiken PostgreSQL en server-side autorisatie. Het publieke contactformulier kan rechtstreeks CRM-leads aanmaken.
+
+Start met [de Coffa OS-handleiding](docs/COFFA-OS.md) voor lokale installatie, het eerste beheerdersaccount, configuratie, tests en Render-deployment. De bestaande publieke website blijft op de repository-root.

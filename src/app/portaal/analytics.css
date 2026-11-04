@@ -1,0 +1,33 @@
+.os-website-analytics{display:grid;gap:18px}
+.os-website-analytics .os-page-heading{align-items:flex-end}
+.os-analytics-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.os-analytics-toolbar .os-period{margin:0}
+.os-analytics-toolbar .os-period button{font:inherit}
+.os-analytics-kpis .os-kpi{min-height:145px}
+.os-analytics-kpis .os-kpi strong{font-size:30px}
+.os-analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.os-analytics-grid>.os-panel{min-width:0}
+.os-analytics-grid h2{margin-bottom:15px}
+.os-analytics-chart{display:grid;gap:10px;margin-top:18px}
+.os-analytics-bar-row{display:grid;grid-template-columns:75px minmax(40px,1fr) 48px;align-items:center;gap:10px;font-size:11px}
+.os-analytics-bar-row>span{color:var(--os-muted);font-variant-numeric:tabular-nums}
+.os-analytics-bar-row>strong{text-align:right;font-size:11px;font-variant-numeric:tabular-nums}
+.os-analytics-bar-track{height:9px;background:#edf0e9;overflow:hidden}
+.os-analytics-bar-track i{display:block;height:100%;background:var(--os-green)}
+.os-analytics-list{display:grid}
+.os-analytics-list-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-top:1px solid var(--os-line);font-size:12px}
+.os-analytics-list-row>div{display:grid;gap:3px;min-width:0}
+.os-analytics-list-row strong{overflow-wrap:anywhere}
+.os-analytics-list-row span{color:var(--os-muted);font-size:11px}
+.os-analytics-list-row>b{flex:none;text-align:right;font-variant-numeric:tabular-nums}
+.os-search-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:13px 0 17px}
+.os-search-summary>div{display:grid;gap:4px}
+.os-search-summary span{color:var(--os-muted);font-size:10px}
+.os-search-summary strong{font-size:19px;font-variant-numeric:tabular-nums}
+.os-analytics-footnote{font-size:11px}
+.os-analytics-setup h2{margin:7px 0}
+.os-analytics-setup ol{padding-left:22px;display:grid;gap:12px}
+.os-analytics-setup li{padding-left:3px}
+.os-analytics-setup p{max-width:780px}
+@media(max-width:850px){.os-analytics-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.os-analytics-toolbar{align-items:flex-start}.os-analytics-toolbar .os-period{width:100%;flex-wrap:wrap}.os-search-summary{grid-template-columns:repeat(2,1fr)}.os-analytics-bar-row{grid-template-columns:58px minmax(30px,1fr) 40px;gap:7px}}

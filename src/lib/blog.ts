@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 export type BlogSection = { heading: string; paragraphs: string[]; points?: string[] };
 export type BlogPost = {
   slug: string;
@@ -8,6 +10,12 @@ export type BlogPost = {
   excerpt: string;
   intro: string;
   sections: BlogSection[];
+  focusKeyword?: string;
+  relatedKeywords?: string[];
+  metaTitle?: string;
+  metaDescription?: string;
+  internalLinks?: string[];
+  modifiedDate?: string;
 };
 
 // Bron voor de blog. Later kan deze interface vervangen worden door een CMS/database.
@@ -93,6 +101,44 @@ export const posts: BlogPost[] = [
   },
 ];
 
+type PublishedArticle = Omit<BlogPost, "date" | "readingTime"> & { publishedAt: string; updatedAt: string };
+const contentApi = () => {
+  const configured = process.env.COFFA_API_URL;
+  if (!configured) return null;
+  try {
+    const base = new URL(configured);
+    if (!["https:", "http:"].includes(base.protocol) || base.username || base.password) return null;
+    return new URL("/api/blog", base.origin);
+  } catch { return null; }
+};
+const fetchPublishedArticles = cache(async (): Promise<BlogPost[]> => {
+  const endpoint = contentApi();
+  if (!endpoint) return [];
+  try {
+    const response = await fetch(endpoint, { cache: "no-store", signal: AbortSignal.timeout(5000) });
+    if (!response.ok) throw new Error(`Blog API returned ${response.status}`);
+    const rows = await response.json() as PublishedArticle[];
+    if (!Array.isArray(rows)) throw new Error("Blog API returned invalid content");
+    return rows.filter(item => item && typeof item.slug === "string" && Array.isArray(item.sections) && typeof item.publishedAt === "string")
+      .map(item => {
+        const words = [item.title, item.intro, ...item.sections.flatMap(section => [section.heading, ...section.paragraphs, ...(section.points ?? [])])].join(" ").trim().split(/\s+/).length;
+        const date = item.publishedAt.slice(0, 10);
+        return { ...item, date, modifiedDate: item.updatedAt?.slice(0, 10), readingTime: `${Math.max(1, Math.ceil(words / 220))} min` };
+      });
+  } catch {
+    console.error("published_blog_unavailable");
+    return [];
+  }
+});
+export async function getPublishedPosts(): Promise<BlogPost[]> {
+  const remote = await fetchPublishedArticles();
+  const bySlug = new Map([...posts, ...remote].map(post => [post.slug, post]));
+  return [...bySlug.values()].sort((a, b) => b.date.localeCompare(a.date));
+}
+export async function getPublishedPost(slug: string): Promise<BlogPost | undefined> {
+  const remote = await fetchPublishedArticles();
+  return remote.find(post => post.slug === slug) ?? posts.find(post => post.slug === slug);
+}
 export function getPost(slug: string) { return posts.find((post) => post.slug === slug); }
 export function formatDate(date: string) {
   return new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));

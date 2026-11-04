@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { workflows } from "@/lib/workflows";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function WorkflowExplorer({ showHeading = true }: { showHeading?: boolean }) {
+  const { language } = useLanguage();
   const [selected, setSelected] = useState(workflows[0].id);
   const workflow = workflows.find((item) => item.id === selected) ?? workflows[0];
   const [perWeek, setPerWeek] = useState(workflow.defaultWeekly);
@@ -12,7 +14,7 @@ export default function WorkflowExplorer({ showHeading = true }: { showHeading?:
   const savedWeekly = originalWeekly - improvedWeekly;
   const savedMonthly = savedWeekly * (52 / 12) / 60;
   const savedPct = Math.round((savedWeekly / originalWeekly) * 100);
-  const hours = new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 1 }).format(savedMonthly);
+  const hours = new Intl.NumberFormat(language === "en" ? "en-US" : "nl-NL", { maximumFractionDigits: 1 }).format(savedMonthly);
 
   function selectFlow(id: string) {
     const next = workflows.find((item) => item.id === id);
