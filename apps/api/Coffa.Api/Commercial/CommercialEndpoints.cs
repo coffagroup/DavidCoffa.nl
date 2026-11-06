@@ -328,7 +328,7 @@ public static class CommercialEndpoints
     }
     private static (DateOnly From, DateOnly To) Period(DateOnly? from, DateOnly? to)
     {
-        var today = CommercialService.Today; var first = from ?? new DateOnly(today.Year, 1, 1); var last = to ?? today;
+        var month = FinancialMonth.At(DateTimeOffset.UtcNow); var first = from ?? month.Start; var last = to ?? month.End.AddDays(-1);
         if (last < first || first.Year < 1900 || last.Year > 2200 || last.DayNumber - first.DayNumber > 3660) throw new ApiException(400, "invalid_period", "Kies een geldige periode van maximaal tien jaar."); return (first, last);
     }
     private static void MapReports(RouteGroupBuilder api)
@@ -341,13 +341,13 @@ public static class CommercialEndpoints
             var credits = await Credits(db, invoices.Select(x => x.Id), ct);
             return Results.Ok(new { invoicedRevenue = invoices.Sum(x => x.NetAmount), receivedPayments = invoices.Sum(x => x.Payments.Sum(p => p.Amount)), outstandingAmount = invoices.Where(x => x.Kind != "credit").Sum(x => CommercialCalculations.Outstanding(x, credits.GetValueOrDefault(x.Id))) });
         });
-        api.MapGet("/finance", async (AppDbContext db, CurrentActor actor, DateOnly? from, DateOnly? to, CancellationToken ct) =>
+        api.MapGet("/finance", async (AppDbContext db, CurrentActor actor, DateOnly? from, DateOnly? to, bool? financialMonth, CancellationToken ct) =>
         {
-            actor.DemandPermission("finance.read"); var period = Period(from, to); return Results.Ok(await FinancialReport(db, period.From, period.To, ct));
+            actor.DemandPermission("finance.read"); var period = Period(from, to); return Results.Ok(await FinancialReport(db, period.From, period.To, ct, financialMonth ?? (!from.HasValue && !to.HasValue)));
         });
-        api.MapGet("/finance/export", async (AppDbContext db, CurrentActor actor, DateOnly? from, DateOnly? to, CancellationToken ct) =>
+        api.MapGet("/finance/export", async (AppDbContext db, CurrentActor actor, DateOnly? from, DateOnly? to, bool? financialMonth, CancellationToken ct) =>
         {
-            actor.DemandPermission("finance.read"); var period = Period(from, to); var invoices = await db.Invoices.AsNoTracking().Include(x => x.Payments).Where(x => x.Status != "draft" && x.InvoiceDate >= period.From && x.InvoiceDate <= period.To).OrderBy(x => x.InvoiceDate).ToListAsync(ct); var credits = await Credits(db, invoices.Select(x => x.Id), ct);
+            actor.DemandPermission("finance.read"); var period = Period(from, to); var invoices = await db.Invoices.AsNoTracking().Include(x => x.Payments).Where(x => x.Status != "draft" && x.InvoiceDate >= period.From && x.InvoiceDate < period.To.AddDays(1)).OrderBy(x => x.InvoiceDate).ToListAsync(ct); var credits = await Credits(db, invoices.Select(x => x.Id), ct);
             static string Cell(string value) { var sanitized = value.Length > 0 && "=+-@\t\r".Contains(value[0]) ? "'" + value : value; return "\"" + sanitized.Replace("\"", "\"\"") + "\""; }
             var output = new StringBuilder("Factuurnummer;Soort;Datum;KlantId;ProjectId;Excl btw;Btw;Totaal;Ontvangen;Openstaand\r\n");
             foreach (var invoice in invoices) output.AppendLine(string.Join(';', Cell(invoice.Number ?? ""), Cell(invoice.Kind), invoice.InvoiceDate.ToString("yyyy-MM-dd"), invoice.OrganizationId, invoice.ProjectId?.ToString() ?? "", invoice.NetAmount.ToString("0.00", CultureInfo.InvariantCulture), invoice.TaxAmount.ToString("0.00", CultureInfo.InvariantCulture), invoice.TotalAmount.ToString("0.00", CultureInfo.InvariantCulture), invoice.Payments.Sum(x => x.Amount).ToString("0.00", CultureInfo.InvariantCulture), CommercialCalculations.Outstanding(invoice, credits.GetValueOrDefault(invoice.Id)).ToString("0.00", CultureInfo.InvariantCulture)));
@@ -355,30 +355,31 @@ public static class CommercialEndpoints
         });
         api.MapGet("/dashboard", Dashboard);
     }
-    public static async Task<object> FinancialReport(AppDbContext db, DateOnly from, DateOnly to, CancellationToken ct)
+    public static async Task<object> FinancialReport(AppDbContext db, DateOnly from, DateOnly to, CancellationToken ct, bool financialMonth = false)
     {
+        var endExclusive = to.AddDays(1);
         var invoices = await db.Invoices.AsNoTracking().Include(x => x.Payments).Where(x => x.Status != "draft").ToListAsync(ct); var credits = await Credits(db, invoices.Select(x => x.Id), ct);
-        var selected = invoices.Where(x => x.InvoiceDate >= from && x.InvoiceDate <= to).ToArray();
-        var expenses = await db.Expenses.AsNoTracking().Where(x => !x.IsArchived && x.Date >= from && x.Date <= to).OrderBy(x => x.Date).ToListAsync(ct);
-        var duration = to.DayNumber - from.DayNumber + 1; var previousTo = from.AddDays(-1); var previousFrom = previousTo.AddDays(1 - duration);
+        var selected = invoices.Where(x => x.InvoiceDate >= from && x.InvoiceDate < endExclusive).ToArray();
+        var expenses = await db.Expenses.AsNoTracking().Where(x => !x.IsArchived && x.Date >= from && x.Date < endExclusive).OrderBy(x => x.Date).ToListAsync(ct);
+        var duration = to.DayNumber - from.DayNumber + 1; var previousTo = from.AddDays(-1); var previousFrom = financialMonth ? from.AddMonths(-1) : previousTo.AddDays(1 - duration);
         var payments = invoices.SelectMany(x => x.Payments).ToArray();
         var allSubs = await db.Subscriptions.AsNoTracking().Where(x => x.Status == "active" && x.StartDate <= to && (!x.EndDate.HasValue || x.EndDate >= to)).ToListAsync(ct);
         var mrr = CommercialCalculations.Round(allSubs.Sum(CommercialCalculations.MonthlyAmount));
         var vat = selected.SelectMany(x => CommercialCalculations.Lines(x.LinesJson)).GroupBy(x => x.TaxRate).Select(g => new { taxRate = g.Key, netAmount = g.Sum(x => x.NetAmount), taxAmount = g.Sum(x => x.TaxAmount) }).ToArray();
         var historical = selected.Where(x => x.Kind == "historical").ToArray();
-        var revenue = selected.Sum(x => x.NetAmount); var received = payments.Where(x => x.Date >= from && x.Date <= to).Sum(x => x.Amount);
+        var revenue = selected.Sum(x => x.NetAmount); var received = payments.Where(x => x.Date >= from && x.Date < endExclusive).Sum(x => x.Amount);
         var outstanding = invoices.Where(x => x.Kind != "credit").Sum(x => CommercialCalculations.Outstanding(x, credits.GetValueOrDefault(x.Id)));
         var overdue = invoices.Where(x => x.Kind != "credit" && x.DueDate < CommercialService.Today).Sum(x => CommercialCalculations.Outstanding(x, credits.GetValueOrDefault(x.Id)));
-        var series = new List<object>(); var cursor = new DateOnly(from.Year, from.Month, 1);
-        while (cursor <= to) { var next = cursor.AddMonths(1); series.Add(new { period = cursor.ToString("yyyy-MM"), invoiced = selected.Where(x => x.InvoiceDate >= cursor && x.InvoiceDate < next).Sum(x => x.NetAmount), received = payments.Where(x => x.Date >= from && x.Date <= to && x.Date >= cursor && x.Date < next).Sum(x => x.Amount), costs = expenses.Where(x => x.Date >= cursor && x.Date < next).Sum(x => x.NetAmount) }); cursor = next; }
+        var series = new List<object>(); var cursor = financialMonth ? FinancialMonth.ForDate(from).Start : new DateOnly(from.Year, from.Month, 1);
+        while (cursor <= to) { var next = cursor.AddMonths(1); series.Add(new { period = financialMonth ? $"{cursor:dd-MM-yyyy} – {next.AddDays(-1):dd-MM-yyyy}" : cursor.ToString("yyyy-MM"), invoiced = selected.Where(x => x.InvoiceDate >= cursor && x.InvoiceDate < next).Sum(x => x.NetAmount), received = payments.Where(x => x.Date >= from && x.Date < endExclusive && x.Date >= cursor && x.Date < next).Sum(x => x.Amount), costs = expenses.Where(x => x.Date >= cursor && x.Date < next).Sum(x => x.NetAmount) }); cursor = next; }
         var organizationNames = await db.Organizations.AsNoTracking().ToDictionaryAsync(x => x.Id, x => x.Name, ct);
         var projectNames = await db.Projects.AsNoTracking().ToDictionaryAsync(x => x.Id, x => x.Name, ct);
-        return new { from, to, invoicedRevenue = revenue, receivedPayments = received, expenses = expenses.Sum(x => x.NetAmount), expenseTax = expenses.Sum(x => x.TaxAmount), outstandingAmount = outstanding, overdueAmount = overdue, taxAmount = selected.Sum(x => x.TaxAmount), mrr, arr = mrr * 12, previous = new { from = previousFrom, to = previousTo, invoicedRevenue = invoices.Where(x => x.InvoiceDate >= previousFrom && x.InvoiceDate <= previousTo).Sum(x => x.NetAmount), receivedPayments = payments.Where(x => x.Date >= previousFrom && x.Date <= previousTo).Sum(x => x.Amount) }, revenueSeries = series, vatOverview = vat, importedVat = new { netAmount = historical.Sum(x => x.NetAmount), taxAmount = historical.Sum(x => x.TaxAmount), note = "Historische import bevat totaal-btw; er is geen tariefverdeling afgeleid." }, revenueByCustomer = selected.GroupBy(x => x.OrganizationId).Select(g => new { organizationId = g.Key, organizationName = organizationNames.GetValueOrDefault(g.Key, "Onbekende klant"), revenue = g.Sum(x => x.NetAmount) }), revenueByProject = selected.GroupBy(x => x.ProjectId).Select(g => new { projectId = g.Key, projectName = g.Key.HasValue ? projectNames.GetValueOrDefault(g.Key.Value, "Onbekend project") : null, revenue = g.Sum(x => x.NetAmount) }) };
+        return new { from, to, invoicedRevenue = revenue, receivedPayments = received, expenses = expenses.Sum(x => x.NetAmount), expenseTax = expenses.Sum(x => x.TaxAmount), outstandingAmount = outstanding, overdueAmount = overdue, taxAmount = selected.Sum(x => x.TaxAmount), mrr, arr = mrr * 12, previous = new { from = previousFrom, to = previousTo, invoicedRevenue = invoices.Where(x => x.InvoiceDate >= previousFrom && x.InvoiceDate < from).Sum(x => x.NetAmount), receivedPayments = payments.Where(x => x.Date >= previousFrom && x.Date < from).Sum(x => x.Amount) }, revenueSeries = series, vatOverview = vat, importedVat = new { netAmount = historical.Sum(x => x.NetAmount), taxAmount = historical.Sum(x => x.TaxAmount), note = "Historische import bevat totaal-btw; er is geen tariefverdeling afgeleid." }, revenueByCustomer = selected.GroupBy(x => x.OrganizationId).Select(g => new { organizationId = g.Key, organizationName = organizationNames.GetValueOrDefault(g.Key, "Onbekende klant"), revenue = g.Sum(x => x.NetAmount) }), revenueByProject = selected.GroupBy(x => x.ProjectId).Select(g => new { projectId = g.Key, projectName = g.Key.HasValue ? projectNames.GetValueOrDefault(g.Key.Value, "Onbekend project") : null, revenue = g.Sum(x => x.NetAmount) }) };
     }
     private static async Task<IResult> Dashboard(AppDbContext db, CurrentActor actor, CancellationToken ct)
     {
-        var today = CommercialService.Today; var monthStart = new DateOnly(today.Year, today.Month, 1); var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-        var activityStart = new DateTimeOffset(monthStart.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero); var activityEnd = new DateTimeOffset(today.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+        var month = FinancialMonth.At(DateTimeOffset.UtcNow); var monthStart = month.Start; var monthEnd = month.End.AddDays(-1);
+        var activityStart = month.StartInstant; var activityEnd = month.EndInstant;
         if (actor.IsCustomer)
         {
             if (!actor.OrganizationId.HasValue) throw new ApiException(403, "organization_required", "Dit account heeft geen klantorganisatie.");
@@ -386,13 +387,13 @@ public static class CommercialEndpoints
             var tasksQuery = db.WorkTasks.AsNoTracking().Where(x => x.OrganizationId == organizationId && x.SharedWithCustomer && !x.IsArchived && x.Status != "done" && (x.Status == "in_progress" || x.Status == "review" || (x.DueDate.HasValue && x.DueDate <= monthEnd)) && (!x.ProjectId.HasValue || db.Projects.Any(p => p.Id == x.ProjectId && p.OrganizationId == organizationId && p.SharedWithCustomer && !p.IsArchived)));
             var tasks = await tasksQuery.OrderBy(x => x.DueDate).Take(10).Select(x => new { x.Id, x.Title, x.Status, x.DueDate, x.ProjectId }).ToListAsync(ct);
             var customerActivities = await db.UserNotifications.AsNoTracking().Where(x => x.UserId == actor.UserId && x.CreatedAt >= activityStart && x.CreatedAt < activityEnd).OrderByDescending(x => x.CreatedAt).Take(8).Select(x => new { x.Id, action = x.Message, entityType = "ticket", entityId = x.TicketId, x.CreatedAt }).ToListAsync(ct);
-            return Results.Ok(new { kpis = new { activeProjects = await db.Projects.CountAsync(x => x.OrganizationId == organizationId && x.SharedWithCustomer && !x.IsArchived && x.Status != "completed" && x.Status != "archived", ct), openTickets = await db.Tickets.CountAsync(x => x.OrganizationId == organizationId && !x.IsArchived && x.Status != "closed" && x.Status != "resolved", ct), openTasks = await tasksQuery.CountAsync(ct) }, activities = customerActivities, tasks });
+            return Results.Ok(new { period = new { from = month.Start, to = monthEnd }, kpis = new { activeProjects = await db.Projects.CountAsync(x => x.OrganizationId == organizationId && x.SharedWithCustomer && !x.IsArchived && x.Status != "completed" && x.Status != "archived", ct), openTickets = await db.Tickets.CountAsync(x => x.OrganizationId == organizationId && !x.IsArchived && x.Status != "closed" && x.Status != "resolved", ct), openTasks = await tasksQuery.CountAsync(ct) }, activities = customerActivities, tasks });
         }
         var kpis = new Dictionary<string, object>();
         if (actor.HasPermission("finance.read"))
         {
-            kpis["monthlyRevenue"] = await db.Invoices.AsNoTracking().Where(x => x.Status != "draft" && x.InvoiceDate >= monthStart && x.InvoiceDate <= today).SumAsync(x => x.NetAmount, ct);
-            kpis["monthlyCosts"] = await db.Expenses.AsNoTracking().Where(x => !x.IsArchived && x.Date >= monthStart && x.Date <= today).SumAsync(x => x.NetAmount, ct);
+            kpis["monthlyRevenue"] = await db.Invoices.AsNoTracking().Where(x => x.Status != "draft" && x.InvoiceDate >= monthStart && x.InvoiceDate < month.End).SumAsync(x => x.NetAmount, ct);
+            kpis["monthlyCosts"] = await db.Expenses.AsNoTracking().Where(x => !x.IsArchived && x.Date >= monthStart && x.Date < month.End).SumAsync(x => x.NetAmount, ct);
         }
         if (actor.HasPermission("projects.read")) kpis["activeProjects"] = await db.Projects.CountAsync(x => !x.IsArchived && x.Status != "completed" && x.Status != "archived", ct);
         if (actor.HasPermission("tickets.read")) kpis["openTickets"] = await db.Tickets.CountAsync(x => !x.IsArchived && x.Status != "closed" && x.Status != "resolved", ct);
@@ -406,6 +407,6 @@ public static class CommercialEndpoints
             activityQuery = activityQuery.Where(x => (crm && (x.EntityType == "organization" || x.EntityType == "lead")) || (projects && (x.EntityType == "project" || x.EntityType == "task")) || (tickets && x.EntityType == "ticket") || (documents && x.EntityType == "document") || (finance && (x.EntityType == "invoice" || x.EntityType == "quote" || x.EntityType == "expense")));
         }
         var activities = await activityQuery.Where(x => x.CreatedAt >= activityStart && x.CreatedAt < activityEnd).OrderByDescending(x => x.CreatedAt).Take(8).Select(x => new { x.Id, x.Action, x.EntityType, x.EntityId, x.CreatedAt }).ToListAsync(ct);
-        return Results.Ok(new { kpis, activities, tasks = myTasks });
+        return Results.Ok(new { period = new { from = month.Start, to = monthEnd }, kpis, activities, tasks = myTasks });
     }
 }
