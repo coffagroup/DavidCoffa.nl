@@ -16,6 +16,39 @@ namespace Coffa.Api.Tests;
 public class CommercialTests(ApiFixture fixture)
 {
     [Fact]
+    public async Task FinancialMonthTotalsAndChartExcludeNextTwentiethAndIncludePaymentsOnOlderInvoices()
+    {
+        using var admin = await fixture.AdminAsync();
+        var organization = await Organization(admin, "Financial boundaries");
+        var start = new DateOnly(2098, 12, 20); var end = start.AddMonths(1);
+        using (var scope = fixture.Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            foreach (var (day, amount) in new[] { (start.AddDays(-1), 1000m), (start, 10m), (end.AddDays(-1), 20m), (end, 2000m) })
+            {
+                var invoice = new Invoice { OrganizationId = organization, Status = "issued", InvoiceDate = day, DueDate = day, NetAmount = amount, TotalAmount = amount };
+                invoice.Payments.Add(new InvoicePayment { InvoiceId = invoice.Id, IdempotencyKey = Guid.NewGuid(), Date = day, Amount = amount });
+                db.Invoices.Add(invoice);
+                db.Expenses.Add(new BusinessExpense { Date = day, NetAmount = amount });
+            }
+            var older = new Invoice { OrganizationId = organization, Status = "issued", InvoiceDate = start.AddMonths(-2), DueDate = start, NetAmount = 5m, TotalAmount = 5m };
+            older.Payments.Add(new InvoicePayment { InvoiceId = older.Id, IdempotencyKey = Guid.NewGuid(), Date = start, Amount = 5m });
+            db.Invoices.Add(older); await db.SaveChangesAsync();
+        }
+        var report = await Json(await admin.GetAsync($"/api/finance?from={start:yyyy-MM-dd}&to={end.AddDays(-1):yyyy-MM-dd}&financialMonth=true"));
+        Assert.Equal(30m, report.GetProperty("invoicedRevenue").GetDecimal());
+        Assert.Equal(35m, report.GetProperty("receivedPayments").GetDecimal());
+        Assert.Equal(30m, report.GetProperty("expenses").GetDecimal());
+        var bucket = Assert.Single(report.GetProperty("revenueSeries").EnumerateArray());
+        Assert.Equal(30m, bucket.GetProperty("invoiced").GetDecimal());
+        Assert.Equal(35m, bucket.GetProperty("received").GetDecimal());
+        Assert.Equal(30m, bucket.GetProperty("costs").GetDecimal());
+        Assert.Equal("2098-11-20", report.GetProperty("previous").GetProperty("from").GetString());
+        var manual = await Json(await admin.GetAsync($"/api/finance?from={end:yyyy-MM-dd}&to={end:yyyy-MM-dd}"));
+        Assert.Equal(2000m, manual.GetProperty("invoicedRevenue").GetDecimal());
+    }
+
+    [Fact]
     public void BrandedEmailTemplateWrapsTheMessageWithCoffaStyling()
     {
         var html = Coffa.Api.Infrastructure.BrandedEmailTemplate.Render("<p>Test message</p>");
@@ -85,7 +118,7 @@ public class CommercialTests(ApiFixture fixture)
     public async Task CurrentMonthDashboardShowsRevenueAndCostsAndInvoiceEmailStoresCustomerPdf()
     {
         using var admin = await fixture.AdminAsync(); await ConfigureCompany(admin); var organization = await Organization(admin, "Monthly dashboard client");
-        var today = DateOnly.FromDateTime(DateTime.UtcNow); var monthStart = new DateOnly(today.Year, today.Month, 1);
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, FinancialMonth.Zone).DateTime); var monthStart = FinancialMonth.ForDate(today).Start;
         var baselineDashboard = await Json(await admin.GetAsync("/api/dashboard")); var baselineRevenue = baselineDashboard.GetProperty("kpis").GetProperty("monthlyRevenue").GetDecimal(); var baselineCosts = baselineDashboard.GetProperty("kpis").GetProperty("monthlyCosts").GetDecimal();
         var invoiceInput = new { organizationId = organization, projectId = (Guid?)null, title = "Monthly service", invoiceDate = today, dueDate = today.AddDays(14), notes = "", terms = "", sharedWithCustomer = true, lines = new[] { new { description = "Development", quantity = 1m, unitPrice = 100m, discountPercent = 0m, taxRate = 21m } } };
         var invoice = await Json(await ApiFixture.SendAsync(admin, HttpMethod.Post, "/api/invoices", invoiceInput)); var invoiceId = invoice.GetProperty("id").GetGuid();
